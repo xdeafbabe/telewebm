@@ -32,12 +32,15 @@ async def convert(url: str) -> typing.Tuple[typing.Optional[str], ConversionStat
                         await input_file.write(chunk)
 
             process = await asyncio.create_subprocess_exec(
-                'ffmpeg', '-i', input_file_path, output_file_path,
-                stderr=asyncio.subprocess.DEVNULL)
+                'ffmpeg', '-y', '-i',
+                input_file_path, output_file_path,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
 
             try:
-                await asyncio.wait_for(process.wait(), timeout=5)
+                await asyncio.wait_for(process.wait(), timeout=30)
             except asyncio.TimeoutError:
+                process.kill()
                 yield None, ConversionStatusEnum.TIMEOUT
                 return
 

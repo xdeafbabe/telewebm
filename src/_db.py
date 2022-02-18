@@ -39,6 +39,6 @@ async def insert(url: str, file_id: str) -> None:
 
 async def get(url: str) -> typing.Optional[str]:
     session = await get_session()
-    row = await session.execute('SELECT file_id FROM uploaded WHERE url = $1', url)
+    row = await session.fetchrow('SELECT file_id FROM uploaded WHERE url = $1', url)
     if row:
         return row.file_id

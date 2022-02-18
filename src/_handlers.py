@@ -29,22 +29,22 @@ class URL(pydantic.BaseModel):
     address: pydantic.HttpUrl
 
 
-def validate_url(url: str) -> typing.Optional[str]:
+async def validate_url(url: str) -> typing.Optional[str]:
     try:
         URL(address=url)
     except pydantic.ValidationError:
-        return False
+        return
 
     url.replace('https://2ch.hk', 'https://2ch.life')
 
     if not url.startswith('https://2ch.life'):
-        return False
+        return
 
     async with httpx.AsyncClient(http2=True) as client:
         resp = await client.head(url)
 
         if resp.status_code != 200 or resp.headers.get('content-type') != 'video/webm':
-            return False
+            return
 
     return url
 
@@ -62,7 +62,7 @@ async def welcome(message: aiogram.types.Message):
 @_bot.dp.inline_handler()
 async def inline(inline_query: aiogram.types.InlineQuery) -> None:
     text = inline_query.query.strip() or ''
-    url = validate_url(text)
+    url = await validate_url(text)
     result_id = hashlib.md5(text.encode('utf-8')).hexdigest()
 
     if url is None:
@@ -71,7 +71,6 @@ async def inline(inline_query: aiogram.types.InlineQuery) -> None:
             title='Invalid URL',
             input_message_content=aiogram.types.InputTextMessageContent(
                 message_text='Query is not a valid 2ch.hk or 2ch.life WebM URL.',
-                parse_mode='markdown',
             ),
         )
     else:
