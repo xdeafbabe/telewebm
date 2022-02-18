@@ -1,58 +1,37 @@
-import asyncio
 import contextlib
-import enum
 import typing
 
 import aiofiles
-import httpx
 
-
-class ConversionStatusEnum(enum.Enum):
-    NOTFOUND = 'File at provided link was not found.'
-    NOTAWEBM = 'File at provided link is not a WebM.'
-    TIMEOUT = 'Conversion took too long.'
-    SUCCESS = 'Success.'
+import _enum
+import _ffmpeg
+import _http
 
 
 @contextlib.asynccontextmanager
-async def convert(url: str) -> typing.Tuple[typing.Optional[str], ConversionStatusEnum]:
-    async with httpx.AsyncClient(http2=True) as client:
-        resp = await client.head(url)
+async def convert_from_url(url: str) -> typing.Tuple[
+    typing.Optional[aiofiles.base.AiofilesContextManager],
+    _enum.StatusEnum,
+]:
+    header_status = await _http.check_headers(url)
 
-        if resp.status_code == 404:
-            yield None, ConversionStatusEnum.NOTFOUND
+    if header_status != _enum.StatusEnum.SUCCESS:
+        yield None, header_status
+        return
+
+    async with aiofiles.tempfile.TemporaryDirectory() as tmpdir:
+        input_file_path = f'{tmpdir}/in.webm'
+        output_file_path = f'{tmpdir}/out.mp4'
+
+        await _http.download_file(url, input_file_path)
+
+        conversion_status = await _ffmpeg.run_ffmpeg(
+            input_file_path, output_file_path)
+
+        if conversion_status != _enum.StatusEnum.SUCCESS:
+            yield None, conversion_status
             return
 
-        if resp.status_code != 200 or resp.headers.get('content-type') != 'video/webm':
-            yield None, ConversionStatusEnum.NOTAWEBM
+        async with aiofiles.open(output_file_path, 'rb') as output_file:
+            yield output_file, _enum.StatusEnum.SUCCESS
             return
-
-        async with aiofiles.tempfile.TemporaryDirectory() as tmpdir:
-            input_file_path = f'{tmpdir}/in.webm'
-            output_file_path = f'{tmpdir}/out.mp4'
-
-            async with aiofiles.open(input_file_path, 'wb') as input_file:
-                async with client.stream('GET', url) as r:
-                    async for chunk in r.aiter_bytes():
-                        await input_file.write(chunk)
-
-            process = await asyncio.create_subprocess_exec(
-                'ffmpeg', '-y', '-i',
-                input_file_path, output_file_path,
-                stderr=asyncio.subprocess.DEVNULL,
-            )
-
-            try:
-                await asyncio.wait_for(process.wait(), timeout=30)
-            except asyncio.TimeoutError:
-                process.kill()
-                yield None, ConversionStatusEnum.TIMEOUT
-                return
-
-            if process.returncode != 0:
-                yield None, ConversionStatusEnum.NOTAWEBM
-                return
-
-            async with aiofiles.open(output_file_path, 'rb') as output_file:
-                yield output_file, ConversionStatusEnum.SUCCESS
-                return

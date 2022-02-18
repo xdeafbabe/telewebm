@@ -1,16 +1,13 @@
 import hashlib
 import os
-import re
-import typing
 
 import aiogram.types
 import dotenv
-import httpx
-import pydantic
 
 import _bot
 import _convert
 import _db
+import _http
 
 
 dotenv.load_dotenv()
@@ -26,32 +23,6 @@ if UPLOAD_CHANNEL_ID is None:
     raise ValueError('Environment variable "UPLOAD_CHANNEL_ID" was not set.')
 
 
-class URL(pydantic.BaseModel):
-    address: pydantic.HttpUrl
-
-
-url_pattern = re.compile('^https://2ch.life/\\w+/src/\\d+/\\d+\\.webm$')
-
-
-async def validate_url(url: str) -> typing.Optional[str]:
-    try:
-        URL(address=url)
-    except pydantic.ValidationError:
-        return
-
-    url.replace('http://', 'https://')
-    url.replace('https://2ch.hk', 'https://2ch.life')
-
-    if not url_pattern.match(url):
-        return
-
-    async with httpx.AsyncClient(http2=True) as client:
-        resp = await client.head(url)
-
-        if resp.status_code == 200 or resp.headers.get('content-type') == 'video/webm':
-            return url
-
-
 @_bot.dp.message_handler(commands=['start', 'help'])
 async def welcome(message: aiogram.types.Message):
     await message.reply((
@@ -63,9 +34,9 @@ async def welcome(message: aiogram.types.Message):
 
 
 @_bot.dp.inline_handler()
-async def inline(inline_query: aiogram.types.InlineQuery) -> None:
+async def inline_handler(inline_query: aiogram.types.InlineQuery) -> None:
     text = inline_query.query.strip() or ''
-    url = await validate_url(text)
+    url = await _http.validate_url(text)
     result_id = hashlib.md5(text.encode('utf-8')).hexdigest()
 
     if url is None:
@@ -95,7 +66,7 @@ async def inline(inline_query: aiogram.types.InlineQuery) -> None:
 
 
 @_bot.dp.callback_query_handler()
-async def callback_handler(callback_query: aiogram.types.CallbackQuery) -> None:
+async def inline_callback_handler(callback_query: aiogram.types.CallbackQuery) -> None:
     await callback_query.answer('Working...')
 
     await _bot.bot.edit_message_caption(
@@ -108,7 +79,9 @@ async def callback_handler(callback_query: aiogram.types.CallbackQuery) -> None:
     video_id = await _db.get(url)
 
     if video_id is None:
-        async with _convert.convert(url) as (converted_video, conversion_status):
+        async with _convert.convert_from_url(url) as (
+            converted_video, conversion_status,
+        ):
             if converted_video is None:
                 await _bot.bot.edit_message_caption(
                     inline_message_id=callback_query.inline_message_id,
