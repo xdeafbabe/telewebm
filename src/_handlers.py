@@ -88,22 +88,30 @@ async def inline(inline_query: aiogram.types.InlineQuery) -> None:
     text = inline_query.query.strip() or ''
 
     if not validate_url(text):
-        await _bot.bot.answer_inline_query(inline_query.id, results=[], cache_time=3600)
+        await _bot.bot.answer_inline_query(inline_query.id, results=[], cache_time=1)
         return
 
     url = text
 
-    input_content = aiogram.types.InputTextMessageContent(url)
+    # input_content = aiogram.types.InputTextMessageContent(url)
     result_id: str = hashlib.md5(text.encode()).hexdigest()
 
-    item = aiogram.types.InlineQueryResultArticle(
+    item = aiogram.types.InlineQueryResultVideo(
         id=result_id,
         title='Convert and send!',
-        input_message_content=input_content,
-        reply_markup=aiogram.types.InlineKeyboardMarkup(
-            row_width=1,
-            inline_keyboard=[aiogram.types.InlineKeyboardButton('Converting...')],
-        ),
+        mime_type='video/mp4',
+        thumb_url='https://2ch.life/favicon.ico',
+        video_url='https://raw.githubusercontent.com/Euromance/telewebm/main/static/converting.mp4',
     )
+    #
+    # item = aiogram.types.InlineQueryResultArticle(
+    #     id=result_id,
+    #     title='Convert and send!',
+    #     input_message_content=input_content,
+    #     reply_markup=aiogram.types.InlineKeyboardMarkup(
+    #         row_width=1,
+    #         inline_keyboard=[aiogram.types.InlineKeyboardButton('Converting...')],
+    #     ),
+    # )
 
-    await _bot.bot.answer_inline_query(inline_query.id, results=[item], cache_time=3600)
+    await _bot.bot.answer_inline_query(inline_query.id, results=[item], cache_time=1)
