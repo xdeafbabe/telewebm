@@ -1,32 +1,25 @@
-import os
 import typing
 
 import asyncpg
 import asyncpg.connection
-import dotenv
+
+import _config
 
 
-_SESSION: typing.Optional[asyncpg.connection.Connection] = None
-
-
-dotenv.load_dotenv()
-
-DB_URL = os.getenv('DB_URL', None)
-if DB_URL is None:
-    raise ValueError('Environment variable "DB_URL" was not set.')
+SESSION: typing.Optional[asyncpg.connection.Connection] = None
 
 
 async def get_session() -> asyncpg.connection.Connection:
-    global _SESSION
+    global SESSION
 
-    if _SESSION is None:
-        _SESSION = await asyncpg.connect(DB_URL)
-        await _SESSION.execute((
+    if SESSION is None:
+        SESSION = await asyncpg.connect(_config.CONFIG['DB_URL'])
+        await SESSION.execute((
             'CREATE TABLE IF NOT EXISTS uploaded '
             '(url text PRIMARY KEY, file_id text NOT NULL)'
         ))
 
-    return _SESSION
+    return SESSION
 
 
 async def insert(url: str, file_id: str) -> None:

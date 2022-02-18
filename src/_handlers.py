@@ -1,26 +1,12 @@
 import hashlib
-import os
 
 import aiogram.types
-import dotenv
 
 import _bot
 import _convert
 import _db
+import _config
 import _http
-
-
-dotenv.load_dotenv()
-
-STUB_VIDEO_URL = os.getenv('STUB_VIDEO_URL', None)
-STUB_THUMBNAIL_URL = os.getenv('STUB_THUMBNAIL_URL', None)
-UPLOAD_CHANNEL_ID = os.getenv('UPLOAD_CHANNEL_ID', None)
-if STUB_VIDEO_URL is None:
-    raise ValueError('Environment variable "STUB_VIDEO_URL" was not set.')
-if STUB_THUMBNAIL_URL is None:
-    raise ValueError('Environment variable "STUB_THUMBNAIL_URL" was not set.')
-if UPLOAD_CHANNEL_ID is None:
-    raise ValueError('Environment variable "UPLOAD_CHANNEL_ID" was not set.')
 
 
 @_bot.dp.message_handler(commands=['start', 'help'])
@@ -28,7 +14,7 @@ async def welcome(message: aiogram.types.Message):
     await message.reply((
         'Hello! This is TeleWebM bot. \n'
         'It can help you download a WebM file from 2ch, '
-        'convert them to MP4 and send as a regular video.\n'
+        'convert it to MP4 and send as a regular video.\n'
         'Please note that this bot only works in inline mode.'
     ))
 
@@ -52,8 +38,8 @@ async def inline_handler(inline_query: aiogram.types.InlineQuery) -> None:
             id=result_id,
             title='Convert and send!',
             mime_type='video/mp4',
-            thumb_url=STUB_THUMBNAIL_URL,
-            video_url=STUB_VIDEO_URL,
+            thumb_url=_config.CONFIG['STUB_THUMBNAIL_URL'],
+            video_url=_config.CONFIG['STUB_VIDEO_URL'],
             reply_markup=aiogram.types.InlineKeyboardMarkup(
                 inline_keyboard=[[aiogram.types.InlineKeyboardButton(
                     'Tap to convert', callback_data=url,
@@ -68,14 +54,10 @@ async def inline_handler(inline_query: aiogram.types.InlineQuery) -> None:
 @_bot.dp.callback_query_handler()
 async def inline_callback_handler(callback_query: aiogram.types.CallbackQuery) -> None:
     await callback_query.answer('Working...')
-
     await _bot.bot.edit_message_caption(
         inline_message_id=callback_query.inline_message_id,
-        caption='Working...',
-    )
-
+        caption='Working...')
     url = callback_query.data
-
     video_id = await _db.get(url)
 
     if video_id is None:
@@ -85,11 +67,11 @@ async def inline_callback_handler(callback_query: aiogram.types.CallbackQuery) -
             if converted_video is None:
                 await _bot.bot.edit_message_caption(
                     inline_message_id=callback_query.inline_message_id,
-                    caption=conversion_status.value,
-                )
+                    caption=conversion_status.value)
                 return
 
-            sent_video = await _bot.bot.send_video(UPLOAD_CHANNEL_ID, converted_video)
+            sent_video = await _bot.bot.send_video(
+                _config.CONFIG['UPLOAD_CHANNEL_ID'], converted_video)
             video_id = sent_video.video.file_id
             await _db.insert(url, video_id)
 
