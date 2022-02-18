@@ -101,7 +101,7 @@ async def inline(inline_query: aiogram.types.InlineQuery) -> None:
         title='Convert and send!',
         mime_type='video/mp4',
         thumb_url='https://2ch.life/favicon.ico',
-        video_url='https://raw.githubusercontent.com/Euromance/telewebm/main/static/converting.mp4',
+        video_url='https://raw.githubusercontent.com/Euromance/telewebm/main/static/converting_stub.mp4',
     )
     #
     # item = aiogram.types.InlineQueryResultArticle(
