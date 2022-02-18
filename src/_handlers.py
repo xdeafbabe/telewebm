@@ -1,5 +1,6 @@
 import hashlib
 import os
+import re
 import typing
 
 import aiogram.types
@@ -29,6 +30,9 @@ class URL(pydantic.BaseModel):
     address: pydantic.HttpUrl
 
 
+url_pattern = re.compile('^https://2ch.life/\\w+/src/\\d+/\\d+\\.webm$')
+
+
 async def validate_url(url: str) -> typing.Optional[str]:
     try:
         URL(address=url)
@@ -38,23 +42,21 @@ async def validate_url(url: str) -> typing.Optional[str]:
     url.replace('http://', 'https://')
     url.replace('https://2ch.hk', 'https://2ch.life')
 
-    if not url.startswith('https://2ch.life'):
+    if not url_pattern.match(url):
         return
 
     async with httpx.AsyncClient(http2=True) as client:
         resp = await client.head(url)
 
-        if resp.status_code != 200 or resp.headers.get('content-type') != 'video/webm':
-            return
-
-    return url
+        if resp.status_code == 200 or resp.headers.get('content-type') == 'video/webm':
+            return url
 
 
 @_bot.dp.message_handler(commands=['start', 'help'])
 async def welcome(message: aiogram.types.Message):
     await message.reply((
         'Hello! This is TeleWebM bot. \n'
-        'It can help you download a WebM file from 2ch.hk, '
+        'It can help you download a WebM file from 2ch, '
         'convert them to MP4 and send as a regular video.\n'
         'Please note that this bot only works in inline mode.'
     ))
@@ -69,9 +71,9 @@ async def inline(inline_query: aiogram.types.InlineQuery) -> None:
     if url is None:
         item = aiogram.types.InlineQueryResultArticle(
             id=result_id,
-            title='Invalid URL',
+            title='Invalid 2ch WebM URL.',
             input_message_content=aiogram.types.InputTextMessageContent(
-                message_text='Query is not a valid 2ch.hk or 2ch.life WebM URL.',
+                message_text='Query is not a valid 2ch WebM URL.',
             ),
         )
     else:
