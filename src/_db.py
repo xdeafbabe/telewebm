@@ -1,10 +1,12 @@
 import os
 import typing
 
-import async_lru
 import asyncpg
 import asyncpg.connection
 import dotenv
+
+
+_SESSION: typing.Optional[asyncpg.connection.Connection] = None
 
 
 dotenv.load_dotenv()
@@ -14,14 +16,17 @@ if DB_URL is None:
     raise ValueError('Environment variable "DB_URL" was not set.')
 
 
-@async_lru.alru_cache
 async def get_session() -> asyncpg.connection.Connection:
-    session = await asyncpg.connect(DB_URL)
-    await session.execute((
-        'CREATE TABLE IF NOT EXISTS uploaded '
-        '(url text PRIMARY KEY, file_id text NOT NULL)'
-    ))
-    return session
+    global _SESSION
+
+    if _SESSION is None:
+        _SESSION = await asyncpg.connect(DB_URL)
+        await _SESSION.execute((
+            'CREATE TABLE IF NOT EXISTS uploaded '
+            '(url text PRIMARY KEY, file_id text NOT NULL)'
+        ))
+
+    return _SESSION
 
 
 async def insert(url: str, file_id: str) -> None:
@@ -36,4 +41,4 @@ async def get(url: str) -> typing.Optional[str]:
     session = await get_session()
     row = await session.execute('SELECT file_id FROM uploaded WHERE url = $1', url)
     if row:
-        return row.url
+        return row.file_id
