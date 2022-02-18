@@ -1,19 +1,10 @@
 import asyncio
+import contextlib
 import enum
-import os
 import typing
 
 import aiofiles
-import aiogram
-import dotenv
 import httpx
-
-
-dotenv.load_dotenv()
-
-UPLOAD_CHANNEL_ID = os.getenv('UPLOAD_CHANNEL_ID', None)
-if UPLOAD_CHANNEL_ID is None:
-    raise ValueError('Environment variable "UPLOAD_CHANNEL_ID" was not set.')
 
 
 class ConversionStatusEnum(enum.Enum):
@@ -22,15 +13,14 @@ class ConversionStatusEnum(enum.Enum):
     SUCCESS = 'Success.'
 
 
-async def convert(
-    bot: aiogram.Bot,
-    url: str,
-) -> typing.Tuple[typing.Optional[str], ConversionStatusEnum]:
+@contextlib.asynccontextmanager
+async def convert(url: str) -> typing.Tuple[typing.Optional[str], ConversionStatusEnum]:
     async with httpx.AsyncClient(http2=True) as client:
         resp = await client.head(url)
 
         if resp.status_code != 200 or resp.headers.get('content-type') != 'video/webm':
-            return None, ConversionStatusEnum.NOTAWEBM
+            yield None, ConversionStatusEnum.NOTAWEBM
+            return
 
         async with aiofiles.tempfile.TemporaryDirectory() as tmpdir:
             input_file_path = f'{tmpdir}/in.webm'
@@ -48,12 +38,13 @@ async def convert(
             try:
                 await asyncio.wait_for(process.wait(), timeout=5)
             except asyncio.TimeoutError:
-                return None, ConversionStatusEnum.TIMEOUT
+                yield None, ConversionStatusEnum.TIMEOUT
+                return
 
             if process.returncode != 0:
-                return None, ConversionStatusEnum.NOTAWEBM
+                yield None, ConversionStatusEnum.NOTAWEBM
+                return
 
             async with aiofiles.open(output_file_path, 'rb') as output_file:
-                sent_video = await bot.send_video(UPLOAD_CHANNEL_ID, output_file)
-
-    return sent_video.video.file_id, ConversionStatusEnum.SUCCESS
+                yield output_file, ConversionStatusEnum.SUCCESS
+                return
