@@ -35,6 +35,7 @@ async def validate_url(url: str) -> typing.Optional[str]:
     except pydantic.ValidationError:
         return
 
+    url.replace('http://', 'https://')
     url.replace('https://2ch.hk', 'https://2ch.life')
 
     if not url.startswith('https://2ch.life'):
@@ -92,6 +93,8 @@ async def inline(inline_query: aiogram.types.InlineQuery) -> None:
 
 @_bot.dp.callback_query_handler()
 async def callback_handler(callback_query: aiogram.types.CallbackQuery) -> None:
+    await callback_query.answer('Working...')
+
     await _bot.bot.edit_message_caption(
         inline_message_id=callback_query.inline_message_id,
         caption='Working...',

@@ -41,4 +41,4 @@ async def get(url: str) -> typing.Optional[str]:
     session = await get_session()
     row = await session.fetchrow('SELECT file_id FROM uploaded WHERE url = $1', url)
     if row:
-        return row.file_id
+        return row['file_id']
