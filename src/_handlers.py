@@ -1,3 +1,4 @@
+import functools
 import hashlib
 
 import aiogram.types
@@ -7,6 +8,7 @@ import _convert
 import _db
 import _config
 import _http
+import _uploads
 
 
 @_bot.dp.message_handler(commands=['start', 'help'])
@@ -22,7 +24,7 @@ async def welcome(message: aiogram.types.Message):
 @_bot.dp.inline_handler()
 async def inline_handler(inline_query: aiogram.types.InlineQuery) -> None:
     text = inline_query.query.strip() or ''
-    url = await _http.validate_url(text)
+    url, validation_status = _http.validate_url(text)
     result_id = hashlib.md5(text.encode('utf-8')).hexdigest()
 
     if url is None:
@@ -30,7 +32,7 @@ async def inline_handler(inline_query: aiogram.types.InlineQuery) -> None:
             id=result_id,
             title='Invalid 2ch WebM URL.',
             input_message_content=aiogram.types.InputTextMessageContent(
-                message_text='Query is not a valid 2ch WebM URL.',
+                message_text=validation_status.value,
             ),
         )
     else:
@@ -54,28 +56,24 @@ async def inline_handler(inline_query: aiogram.types.InlineQuery) -> None:
 @_bot.dp.callback_query_handler()
 async def inline_callback_handler(callback_query: aiogram.types.CallbackQuery) -> None:
     await callback_query.answer('Working...')
-    await _bot.bot.edit_message_caption(
-        inline_message_id=callback_query.inline_message_id,
-        caption='Working...')
+
+    edit_message_caption = functools.partial(
+        _bot.bot.edit_message_caption,
+        inline_message_id=callback_query.inline_message_id)
+
+    await edit_message_caption(caption='Working...')
     url = callback_query.data
     video_id = await _db.get(url)
 
     if video_id is None:
-        async with _convert.convert_from_url(url) as (
-            converted_video, conversion_status,
-        ):
-            if converted_video is None:
-                await _bot.bot.edit_message_caption(
-                    inline_message_id=callback_query.inline_message_id,
-                    caption=conversion_status.value)
+        async with _convert.convert_from_url(url) as (video_path, conversion_status):
+            if video_path is None:
+                await edit_message_caption(caption=conversion_status.value)
                 return
 
-            sent_video = await _bot.bot.send_video(
-                _config.CONFIG['UPLOAD_CHANNEL_ID'], converted_video)
-            video_id = sent_video.video.file_id
+            video_id = await _uploads.upload(_bot.bot, video_path)
             await _db.insert(url, video_id)
 
     await _bot.bot.edit_message_media(
         inline_message_id=callback_query.inline_message_id,
-        media=aiogram.types.InputMediaVideo(video_id),
-    )
+        media=aiogram.types.InputMediaVideo(video_id))

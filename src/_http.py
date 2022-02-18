@@ -15,17 +15,22 @@ class URL(pydantic.BaseModel):
 url_pattern = re.compile('^https://2ch.life/\\w+/src/\\d+/\\d+\\.webm$')
 
 
-async def validate_url(url: str) -> typing.Optional[str]:
+def validate_url(url: str) -> typing.Tuple[
+    typing.Optional[str],
+    _enum.StatusEnum,
+]:
     try:
         URL(address=url)
     except pydantic.ValidationError:
-        return
+        return None, _enum.StatusEnum.NOTAURL
 
     url.replace('http://', 'https://')
     url.replace('https://2ch.hk', 'https://2ch.life')
 
-    if url_pattern.match(url):
-        return url
+    if not url_pattern.match(url):
+        return None, _enum.StatusEnum.NOTAWEBM
+
+    return url, _enum.StatusEnum.SUCCESS
 
 
 async def check_headers(url: str) -> _enum.StatusEnum:
