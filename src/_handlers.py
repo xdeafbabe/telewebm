@@ -1,6 +1,5 @@
 import asyncio
 import asyncio.subprocess
-import io
 
 import aiofiles
 import aiogram.types

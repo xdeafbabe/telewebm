@@ -17,7 +17,6 @@ bootstrap:
 
 lint: $(VENV)
 	$(PYTHON) -m flake8 src
-	$(PYTHON) -m mypy src
 
 clean:
 	rm -rf $(VENV)
