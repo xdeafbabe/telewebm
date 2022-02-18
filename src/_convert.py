@@ -8,6 +8,7 @@ import httpx
 
 
 class ConversionStatusEnum(enum.Enum):
+    NOTFOUND = 'File at provided link was not found.'
     NOTAWEBM = 'File at provided link is not a WebM.'
     TIMEOUT = 'Conversion took too long.'
     SUCCESS = 'Success.'
@@ -17,6 +18,10 @@ class ConversionStatusEnum(enum.Enum):
 async def convert(url: str) -> typing.Tuple[typing.Optional[str], ConversionStatusEnum]:
     async with httpx.AsyncClient(http2=True) as client:
         resp = await client.head(url)
+
+        if resp.status_code == 404:
+            yield None, ConversionStatusEnum.NOTFOUND
+            return
 
         if resp.status_code != 200 or resp.headers.get('content-type') != 'video/webm':
             yield None, ConversionStatusEnum.NOTAWEBM

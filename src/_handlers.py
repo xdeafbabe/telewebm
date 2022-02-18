@@ -88,7 +88,8 @@ async def inline(inline_query: aiogram.types.InlineQuery) -> None:
             ),
         )
 
-    await _bot.bot.answer_inline_query(inline_query.id, results=[item], cache_time=1)
+    await _bot.bot.answer_inline_query(
+        inline_query.id, results=[item], cache_time=60 * 60 * 4)
 
 
 @_bot.dp.callback_query_handler()
