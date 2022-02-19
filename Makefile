@@ -9,6 +9,7 @@ help:
 	@echo "    make bootstrap - setup virtual environment and install dependencies"
 	@echo "    make lint      - source code static analysis"
 	@echo "    make clean     - clean up artifacts"
+	@echo "    make deploy    - deploy latest git commit to Heroku
 
 bootstrap:
 	python3 -m venv $(VENV)
@@ -21,3 +22,6 @@ lint: $(VENV)
 
 clean:
 	rm -rf $(VENV)
+
+deploy:
+	git push heroku main
