@@ -24,7 +24,7 @@ async def handle_document(message: aiogram.types.Message) -> None:
         await message.reply('Provided file is too large.')
         return
     status = await message.reply('Working...')
-    db_document_id = f'{message.document.file_name}{message.document.file.size}'
+    db_document_id = f'{message.document.file_name}{message.document.file_size}'
     video_id, err = await _db.get_by_document_id(db_document_id)
 
     if video_id is None:
