@@ -13,7 +13,7 @@ async def get_session() -> asyncpg.connection.Connection:
     global SESSION
 
     if SESSION is None:
-        SESSION = await asyncpg.connect(_utils.CONFIG['DB_URL'])
+        SESSION = await asyncpg.connect(_utils.CONFIG['DATABASE_URL'])
         await SESSION.execute((
             'CREATE TABLE IF NOT EXISTS by_url '
             '(url text PRIMARY KEY, file_id text, error text);'

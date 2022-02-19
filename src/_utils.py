@@ -8,7 +8,7 @@ dotenv.load_dotenv()
 
 KEYS: list[str] = [
     'STUB_VIDEO_URL', 'STUB_THUMBNAIL_URL', 'UPLOAD_CHANNEL_ID',
-    'BOT_TOKEN', 'LOGGING_LEVEL', 'DB_URL', 'MAX_FILE_SIZE',
+    'BOT_TOKEN', 'LOGGING_LEVEL', 'DATABASE_URL', 'MAX_FILE_SIZE',
 ]
 
 CONFIG: dict[str, str] = {}
