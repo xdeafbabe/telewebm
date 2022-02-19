@@ -15,11 +15,10 @@ async def welcome(message: aiogram.types.Message) -> None:
     ))
 
 
-@_bot.dp.message_handler(
-    lambda message: message.document is not None and
-    message.document.mime_type == 'video/webm',
-)
+@_bot.dp.message_handler(content_types=aiogram.types.ContentTypes.DOCUMENT)
 async def handle_document(message: aiogram.types.Message) -> None:
+    if message.document.mime_type != 'video/webm':
+        return
     status = await message.reply('Working...')
     video_id = await _db.get_by_document_id(message.document.file_id)
 
