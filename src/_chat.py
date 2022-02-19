@@ -3,7 +3,6 @@ import aiogram
 import _bot
 import _convert
 import _db
-import _uploads
 
 
 @_bot.dp.message_handler(commands=['start', 'help'])
@@ -31,7 +30,7 @@ async def document_handler(message: aiogram.types.Message) -> None:
                 status.edit_text(conversion_status.value)
                 return
 
-            video_id = await _uploads.upload(_bot.bot, video_path)
+            video_id = await _convert.upload(_bot.bot, video_path)
             await _db.insert_by_document_id(message.document.file_id, video_id)
 
     await status.delete()

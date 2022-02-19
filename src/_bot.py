@@ -1,7 +1,7 @@
 import aiogram
 
-import _config
+import _utils
 
 
-bot = aiogram.Bot(token=_config.CONFIG['BOT_TOKEN'])
+bot = aiogram.Bot(token=_utils.CONFIG['BOT_TOKEN'])
 dp = aiogram.Dispatcher(bot)

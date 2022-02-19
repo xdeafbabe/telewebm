@@ -6,9 +6,8 @@ import aiogram.types
 import _bot
 import _convert
 import _db
-import _config
 import _http
-import _uploads
+import _utils
 
 
 @_bot.dp.inline_handler()
@@ -30,8 +29,8 @@ async def inline_handler(inline_query: aiogram.types.InlineQuery) -> None:
             id=result_id,
             title='Convert and send!',
             mime_type='video/mp4',
-            thumb_url=_config.CONFIG['STUB_THUMBNAIL_URL'],
-            video_url=_config.CONFIG['STUB_VIDEO_URL'],
+            thumb_url=_utils.CONFIG['STUB_THUMBNAIL_URL'],
+            video_url=_utils.CONFIG['STUB_VIDEO_URL'],
             reply_markup=aiogram.types.InlineKeyboardMarkup(
                 inline_keyboard=[[aiogram.types.InlineKeyboardButton(
                     'Tap to convert', callback_data=url,
@@ -61,7 +60,7 @@ async def inline_callback_handler(callback_query: aiogram.types.CallbackQuery) -
                 await edit_message_caption(caption=conversion_status.value)
                 return
 
-            video_id = await _uploads.upload(_bot.bot, video_path)
+            video_id = await _convert.upload(_bot.bot, video_path)
             await _db.insert_by_url(url, video_id)
 
     await _bot.bot.edit_message_media(

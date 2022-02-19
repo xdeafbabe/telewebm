@@ -3,7 +3,7 @@ import typing
 import asyncpg
 import asyncpg.connection
 
-import _config
+import _utils
 
 
 SESSION: typing.Optional[asyncpg.connection.Connection] = None
@@ -13,7 +13,7 @@ async def get_session() -> asyncpg.connection.Connection:
     global SESSION
 
     if SESSION is None:
-        SESSION = await asyncpg.connect(_config.CONFIG['DB_URL'])
+        SESSION = await asyncpg.connect(_utils.CONFIG['DB_URL'])
         await SESSION.execute((
             'CREATE TABLE IF NOT EXISTS by_url '
             '(url text PRIMARY KEY, file_id text NOT NULL);'
