@@ -19,6 +19,7 @@ async def welcome(message: aiogram.types.Message):
 async def document_handler(message: aiogram.types.Message) -> None:
     if message.document is None or message.document.mime_type != 'video/webm':
         return
+
     status = await message.reply('Working...')
     video_id = await _db.get_by_document_id(message.document.file_id)
 
