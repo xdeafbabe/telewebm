@@ -11,16 +11,6 @@ import _http
 import _uploads
 
 
-@_bot.dp.message_handler(commands=['start', 'help'])
-async def welcome(message: aiogram.types.Message):
-    await message.reply((
-        'Hello! This is TeleWebM bot. \n'
-        'It can help you download a WebM file from 2ch, '
-        'convert it to MP4 and send as a regular video.\n'
-        'Please note that this bot only works in inline mode.'
-    ))
-
-
 @_bot.dp.inline_handler()
 async def inline_handler(inline_query: aiogram.types.InlineQuery) -> None:
     text = inline_query.query.strip() or ''
@@ -63,7 +53,7 @@ async def inline_callback_handler(callback_query: aiogram.types.CallbackQuery) -
 
     await edit_message_caption(caption='Working...')
     url = callback_query.data
-    video_id = await _db.get(url)
+    video_id = await _db.get_by_url(url)
 
     if video_id is None:
         async with _convert.convert_from_url(url) as (video_path, conversion_status):
@@ -72,7 +62,7 @@ async def inline_callback_handler(callback_query: aiogram.types.CallbackQuery) -
                 return
 
             video_id = await _uploads.upload(_bot.bot, video_path)
-            await _db.insert(url, video_id)
+            await _db.insert_by_url(url, video_id)
 
     await _bot.bot.edit_message_media(
         inline_message_id=callback_query.inline_message_id,

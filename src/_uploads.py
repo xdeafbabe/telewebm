@@ -15,10 +15,4 @@ async def download(
     document: aiogram.types.Document,
     document_path: str,
 ) -> _enum.StatusEnum:
-    if document.mime_type != 'video/webm':
-        return _enum.StatusEnum.NOTAWEBM
-
-    async with aiofiles.open(document_path, 'wb') as output:
-        await document.download(destination_file=output)
-
-    return _enum.StatusEnum.SUCCESS
+    await document.download(destination_file=document_path)

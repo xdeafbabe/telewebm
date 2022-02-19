@@ -3,8 +3,9 @@ import logging
 import aiogram
 
 import _bot
-import _handlers  # noqa: F401
+import _chat  # noqa: F401
 import _config
+import _inline  # noqa: F401
 
 
 if __name__ == '__main__':

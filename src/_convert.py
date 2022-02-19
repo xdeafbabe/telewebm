@@ -23,7 +23,6 @@ async def convert_from_url(url: str) -> typing.Tuple[
     async with aiofiles.tempfile.TemporaryDirectory() as tmpdir:
         input_file_path = f'{tmpdir}/in.webm'
         output_file_path = f'{tmpdir}/out.mp4'
-
         await _http.download_file(url, input_file_path)
 
         conversion_status = await _ffmpeg.run_ffmpeg(input_file_path, output_file_path)
@@ -42,10 +41,7 @@ async def convert_from_document(document: aiogram.types.Document) -> typing.Tupl
     async with aiofiles.tempfile.TemporaryDirectory() as tmpdir:
         input_file_path = f'{tmpdir}/in.webm'
         output_file_path = f'{tmpdir}/out.mp4'
-
-        download_status = await _uploads.download(document, input_file_path)
-        if download_status != _enum.StatusEnum.SUCCESS:
-            yield None, download_status
+        await _uploads.download(document, input_file_path)
 
         conversion_status = await _ffmpeg.run_ffmpeg(input_file_path, output_file_path)
         if conversion_status != _enum.StatusEnum.SUCCESS:
