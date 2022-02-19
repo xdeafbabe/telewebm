@@ -20,7 +20,7 @@ async def welcome(message: aiogram.types.Message) -> None:
 async def handle_document(message: aiogram.types.Message) -> None:
     if message.document.mime_type != 'video/webm':
         return
-    if message.document.file_size > _utils.CONFIG['MAX_FILE_SIZE']:
+    if message.document.file_size > int(_utils.CONFIG['MAX_FILE_SIZE']):
         await message.reply('Provided file is too large.')
         return
     status = await message.reply('Working...')

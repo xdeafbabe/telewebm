@@ -14,13 +14,13 @@ async def check_headers(url: str) -> _utils.StatusEnum:
         if resp.status_code != 200 or resp.headers.get('content-type') != 'video/webm':
             return _utils.StatusEnum.NOTAWEBM
 
-        if resp.headers.get('content-length') > _utils.CONFIG['MAX_FILE_SIZE']:
+        if resp.headers.get('content-length') > int(_utils.CONFIG['MAX_FILE_SIZE']):
             return _utils.StatusEnum.TOOLARGE
 
     return _utils.StatusEnum.SUCCESS
 
 
-async def download_file(url: str, output_file_path: str) -> _utils.StatusEnum:
+async def download_file(url: str, output_file_path: str) -> None:
     async with aiofiles.open(output_file_path, 'wb') as output_file:
         async with httpx.AsyncClient(http2=True) as client:
             async with client.stream('GET', url) as r:

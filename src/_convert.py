@@ -2,6 +2,7 @@ import asyncio
 import typing
 
 import aiofiles
+import aiofiles.tempfile
 import aiogram
 
 import _http
