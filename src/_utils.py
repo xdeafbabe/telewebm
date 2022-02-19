@@ -8,7 +8,7 @@ dotenv.load_dotenv()
 
 KEYS: list[str] = [
     'STUB_VIDEO_URL', 'STUB_THUMBNAIL_URL', 'UPLOAD_CHANNEL_ID',
-    'BOT_TOKEN', 'LOGGING_LEVEL', 'DB_URL',
+    'BOT_TOKEN', 'LOGGING_LEVEL', 'DB_URL', 'MAX_FILE_SIZE',
 ]
 
 CONFIG: dict[str, str] = {}
@@ -25,7 +25,7 @@ for key in KEYS:
 class StatusEnum(enum.Enum):
     NOTFOUND = 'Provided file was not found.'
     NOTAWEBM = 'Provided file is not a WebM.'
+    TOOLARGE = 'Provided file is too large.'
     NOTAURL = 'Provided string is not a URL.'
     FAILED = 'Conversion failed.'
-    TIMEOUT = 'Conversion took too long.'
     SUCCESS = 'Success.'

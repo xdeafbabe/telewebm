@@ -1,7 +1,10 @@
 import functools
 import hashlib
+import re
+import typing
 
 import aiogram.types
+import pydantic
 
 import _bot
 import _convert
@@ -10,10 +13,35 @@ import _http
 import _utils
 
 
+url_pattern = re.compile('^https://2ch.life/\\w+/src/\\d+/\\d+\\.webm$')
+
+
+class URL(pydantic.BaseModel):
+    address: pydantic.HttpUrl
+
+
+def validate_url(url: str) -> typing.Tuple[
+    typing.Optional[str],
+    _utils.StatusEnum,
+]:
+    try:
+        URL(address=url)
+    except pydantic.ValidationError:
+        return None, _utils.StatusEnum.NOTAURL
+
+    url.replace('http://', 'https://')
+    url.replace('https://2ch.hk', 'https://2ch.life')
+
+    if not url_pattern.match(url):
+        return None, _utils.StatusEnum.NOTAWEBM
+
+    return url, _utils.StatusEnum.SUCCESS
+
+
 @_bot.dp.inline_handler()
 async def inline_handler(inline_query: aiogram.types.InlineQuery) -> None:
     text = inline_query.query.strip() or ''
-    url, validation_status = _http.validate_url(text)
+    url, validation_status = validate_url(text)
     result_id = hashlib.md5(text.encode('utf-8')).hexdigest()
 
     if url is None:
@@ -39,7 +67,7 @@ async def inline_handler(inline_query: aiogram.types.InlineQuery) -> None:
         )
 
     await _bot.bot.answer_inline_query(
-        inline_query.id, results=[item], cache_time=60 * 60 * 4)
+        inline_query.id, results=[item], cache_time=60 * 60 * 24)
 
 
 @_bot.dp.callback_query_handler()
@@ -52,21 +80,26 @@ async def inline_callback_handler(callback_query: aiogram.types.CallbackQuery) -
 
     await edit_message_caption(caption='Working...')
     url = callback_query.data
-    video_id = await _db.get_by_url(url)
+    video_id, err = await _db.get_by_url(url)
 
     if video_id is None:
+        if err is not None:
+            await edit_message_caption(err)
+            return
+
         header_status = await _http.check_headers(url)
         if header_status != _utils.StatusEnum.SUCCESS:
             await edit_message_caption(caption=header_status.value)
+            await _db.insert_by_url(url, None, header_status.value)
             return
 
-        async with _convert.convert(url) as (video_path, conversion_status):
-            if video_path is None:
-                await edit_message_caption(caption=conversion_status.value)
-                return
+        video_id, conversion_status = await _convert.convert(_bot.bot, url)
+        if conversion_status != _utils.StatusEnum.SUCCESS:
+            await edit_message_caption(caption=conversion_status.value)
+            await _db.insert_by_url(url, None, conversion_status.value)
+            return
 
-            video_id = await _convert.upload_video(_bot.bot, video_path)
-            await _db.insert_by_url(url, video_id)
+        await _db.insert_by_url(url, video_id, None)
 
     await _bot.bot.edit_message_media(
         inline_message_id=callback_query.inline_message_id,
