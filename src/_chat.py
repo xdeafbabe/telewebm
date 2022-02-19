@@ -6,7 +6,7 @@ import _db
 
 
 @_bot.dp.message_handler(commands=['start', 'help'])
-async def welcome(message: aiogram.types.Message):
+async def welcome(message: aiogram.types.Message) -> None:
     await message.reply((
         'Hello! This is TeleWebM bot. \n'
         'It can help you download a WebM file from 2ch, '
@@ -15,10 +15,11 @@ async def welcome(message: aiogram.types.Message):
     ))
 
 
-@_bot.dp.message_handler()
-async def document_handler(message: aiogram.types.Message) -> None:
-    if message.document is None or message.document.mime_type != 'video/webm':
-        return
+@_bot.dp.message_handler(
+    lambda message: message.document is not None and
+    message.document.mime_type == 'video/webm',
+)
+async def handle_document(message: aiogram.types.Message) -> None:
     status = await message.reply('Working...')
     video_id = await _db.get_by_document_id(message.document.file_id)
 

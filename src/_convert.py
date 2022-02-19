@@ -44,10 +44,12 @@ async def run_ffmpeg(
 
 
 @contextlib.asynccontextmanager
-async def convert(source: typing.Union[str, aiogram.types.Document]) -> typing.Tuple[
+async def convert(
+    source: typing.Union[str, aiogram.types.Document],
+) -> typing.AsyncContextManager[typing.Tuple[
     typing.Optional[str],
     _utils.StatusEnum,
-]:
+]]:
     async with aiofiles.tempfile.TemporaryDirectory() as tmpdir:
         input_file_path = f'{tmpdir}/in.webm'
         output_file_path = f'{tmpdir}/out.mp4'
