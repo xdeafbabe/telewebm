@@ -20,7 +20,8 @@ async def handle_document(message: aiogram.types.Message) -> None:
     if message.document.mime_type != 'video/webm':
         return
     status = await message.reply('Working...')
-    video_id = await _db.get_by_document_id(message.document.file_id)
+    db_document_id = f'{message.document.file_name}{message.document.file.size}'
+    video_id = await _db.get_by_document_id(db_document_id)
 
     if video_id is None:
         async with _convert.convert(
@@ -31,7 +32,7 @@ async def handle_document(message: aiogram.types.Message) -> None:
                 return
 
             video_id = await _convert.upload_video(_bot.bot, video_path)
-            await _db.insert_by_document_id(message.document.file_id, video_id)
+            await _db.insert_by_document_id(db_document_id, video_id)
 
     await status.delete()
     await message.reply_video(video_id)
