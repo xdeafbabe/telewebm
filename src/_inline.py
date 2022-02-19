@@ -84,7 +84,7 @@ async def inline_callback_handler(callback_query: aiogram.types.CallbackQuery) -
 
     if video_id is None:
         if err is not None:
-            await edit_message_caption(err)
+            await edit_message_caption(caption=err)
             return
 
         header_status = await _http.check_headers(url)
