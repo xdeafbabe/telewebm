@@ -14,7 +14,7 @@ async def check_headers(url: str) -> _utils.StatusEnum:
         if resp.status_code != 200 or resp.headers.get('content-type') != 'video/webm':
             return _utils.StatusEnum.NOTAWEBM
 
-        if resp.headers.get('content-length') > int(_utils.CONFIG['MAX_FILE_SIZE']):
+        if int(resp.headers.get('content-length')) > int(_utils.CONFIG['MAX_FILE_SIZE']):
             return _utils.StatusEnum.TOOLARGE
 
     return _utils.StatusEnum.SUCCESS
