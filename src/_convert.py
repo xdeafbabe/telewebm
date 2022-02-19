@@ -19,7 +19,7 @@ async def run_ffmpeg(
     )
 
     try:
-        await asyncio.wait_for(process.wait(), timeout=30)
+        await asyncio.wait_for(process.wait(), timeout=60)
     except asyncio.TimeoutError:
         process.kill()
         return _utils.StatusEnum.TOOLARGE
