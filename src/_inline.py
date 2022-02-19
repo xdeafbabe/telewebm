@@ -55,12 +55,17 @@ async def inline_callback_handler(callback_query: aiogram.types.CallbackQuery) -
     video_id = await _db.get_by_url(url)
 
     if video_id is None:
-        async with _convert.convert_from_url(url) as (video_path, conversion_status):
+        header_status = await _http.check_headers(url)
+        if header_status != _utils.StatusEnum.SUCCESS:
+            await edit_message_caption(caption=header_status.value)
+            return
+
+        async with _convert.convert(url) as (video_path, conversion_status):
             if video_path is None:
                 await edit_message_caption(caption=conversion_status.value)
                 return
 
-            video_id = await _convert.upload(_bot.bot, video_path)
+            video_id = await _convert.upload_video(_bot.bot, video_path)
             await _db.insert_by_url(url, video_id)
 
     await _bot.bot.edit_message_media(

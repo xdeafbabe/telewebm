@@ -11,7 +11,7 @@ async def welcome(message: aiogram.types.Message):
         'Hello! This is TeleWebM bot. \n'
         'It can help you download a WebM file from 2ch, '
         'convert it to MP4 and send as a regular video.\n'
-        'Please note that this bot only works in inline mode.'
+        'Please send a WebM file or use the bot in inline mode.'
     ))
 
 
@@ -23,14 +23,14 @@ async def document_handler(message: aiogram.types.Message) -> None:
     video_id = await _db.get_by_document_id(message.document.file_id)
 
     if video_id is None:
-        async with _convert.convert_from_document(
+        async with _convert.convert(
             message.document,
         ) as (video_path, conversion_status):
             if video_path is None:
                 status.edit_text(conversion_status.value)
                 return
 
-            video_id = await _convert.upload(_bot.bot, video_path)
+            video_id = await _convert.upload_video(_bot.bot, video_path)
             await _db.insert_by_document_id(message.document.file_id, video_id)
 
     await status.delete()
